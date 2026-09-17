@@ -1,4 +1,6 @@
-import { IsMongoId, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsMongoId, IsString, ValidateNested } from 'class-validator';
+import { ClientBranchAddressDto } from './client-branch-address.dto';
 
 export class CreateClientBranchDto {
   @IsString()
@@ -6,4 +8,8 @@ export class CreateClientBranchDto {
 
   @IsMongoId()
   clientId!: string;
+
+  @ValidateNested()
+  @Type(() => ClientBranchAddressDto)
+  address!: ClientBranchAddressDto;
 }

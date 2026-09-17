@@ -9,11 +9,15 @@ import {
 import { TransportRateService } from '../../services/master/transport-rate.service';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../auth/users.module';
+import { DeliveryChallanModule } from '../trip/delivery-challan.module';
+import { TrucksModule } from '../fleet/trucks.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
+    DeliveryChallanModule,
+    TrucksModule,
     MongooseModule.forFeature([
       { name: TransportRate.name, schema: TransportRateSchema },
     ]),

@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { errorCode } from '../../common/error.index';
+import { DealerType } from '../../common/enums/dealer-type.enum';
 import { ChangeClientBranchActiveStatusDto } from '../../dto/master/change-client-branch-active-status.dto';
 import { CreateClientBranchDto } from '../../dto/master/create-client-branch.dto';
 import { UpdateClientBranchDto } from '../../dto/master/update-client-branch.dto';
 import { ClientRepository } from '../../repositories/client.repository';
 import { ClientBranchRepository } from '../../repositories/client-branch.repository';
+import { DealerRepository } from '../../repositories/dealer.repository';
 import { Actor, RegistrationAuthorizationService } from '../auth/authorization.service';
 
 @Injectable()
@@ -17,6 +19,7 @@ export class ClientBranchService {
   constructor(
     private readonly clientBranchRepository: ClientBranchRepository,
     private readonly clientRepository: ClientRepository,
+    private readonly dealerRepository: DealerRepository,
     private readonly authorizationService: RegistrationAuthorizationService,
   ) {}
 
@@ -54,10 +57,20 @@ export class ClientBranchService {
     }
 
     try {
-      return await this.clientBranchRepository.create({
+      const branch = await this.clientBranchRepository.create({
         ...dto,
         clientId: new Types.ObjectId(dto.clientId),
       });
+
+      await this.dealerRepository.create({
+        clientId: new Types.ObjectId(dto.clientId),
+        dealerName: dto.branchName,
+        code: branch._id.toString(),
+        address: dto.address,
+        dealerType: DealerType.COMPANY,
+      });
+
+      return branch;
     } catch (error) {
       if ((error as { code?: number }).code === 11000) {
         throw new ConflictException({
@@ -109,6 +122,20 @@ export class ClientBranchService {
           message: 'Client branch not found',
           error_code: errorCode.apiCommon.notFound,
         });
+      }
+
+      if (dto.branchName || dto.address) {
+        const dealer = await this.dealerRepository.findByUniqueIdentifier(
+          branch.clientId.toString(),
+          branchId,
+        );
+
+        if (dealer) {
+          await this.dealerRepository.updateById(dealer._id.toString(), {
+            ...(dto.branchName ? { dealerName: dto.branchName } : {}),
+            ...(dto.address ? { address: dto.address } : {}),
+          });
+        }
       }
 
       return updated;

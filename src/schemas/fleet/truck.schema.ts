@@ -10,6 +10,59 @@ export enum Manufacturer {
   ASHOK_LEYLAND = 'ASHOK_LEYLAND',
 }
 
+@Schema({ _id: false })
+export class CertificateValidity {
+  @Prop({
+    type: Date,
+    required: true,
+  })
+  fromDate!: Date;
+
+  @Prop({
+    type: Date,
+    required: true,
+  })
+  toDate!: Date;
+}
+
+export const CertificateValiditySchema =
+  SchemaFactory.createForClass(CertificateValidity);
+
+@Schema({ _id: false })
+export class Certificate {
+  @Prop({
+    type: CertificateValiditySchema,
+    required: true,
+  })
+  fitnessCertificate!: CertificateValidity;
+
+  @Prop({
+    type: CertificateValiditySchema,
+    required: true,
+  })
+  permitDate!: CertificateValidity;
+
+  @Prop({
+    type: CertificateValiditySchema,
+    required: true,
+  })
+  insurance!: CertificateValidity;
+
+  @Prop({
+    type: CertificateValiditySchema,
+    required: true,
+  })
+  pollutionCertificate!: CertificateValidity;
+
+  @Prop({
+    type: CertificateValiditySchema,
+    required: true,
+  })
+  taxCertificate!: CertificateValidity;
+}
+
+export const CertificateSchema = SchemaFactory.createForClass(Certificate);
+
 @Schema({
   timestamps: true,
 })
@@ -80,6 +133,12 @@ export class Truck {
     index: true,
   })
   ownerId!: Types.ObjectId;
+
+  @Prop({
+    type: CertificateSchema,
+    required: true,
+  })
+  certificate!: Certificate;
 
   @Prop({
     default: true,

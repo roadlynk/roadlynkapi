@@ -7,11 +7,12 @@ import {
 import { Types } from 'mongoose';
 import { ActionResourceType } from '../../common/enums/action-resource-type.enum';
 import { errorCode } from '../../common/error.index';
-import { CreateTruckDto } from '../../dto/fleet/create-truck.dto';
+import { CertificateDto, CreateTruckDto } from '../../dto/fleet/create-truck.dto';
 import { ChangeTruckActiveStatusDto } from '../../dto/fleet/change-truck-active-status.dto';
 import { GetTrucksByOwnerQueryDto } from '../../dto/fleet/get-trucks-by-owner-query.dto';
 import { GetTrucksQueryDto } from '../../dto/fleet/get-trucks-query.dto';
 import { UpdateTruckDto } from '../../dto/fleet/update-truck.dto';
+import { Certificate } from '../../schemas/fleet/truck.schema';
 import { ActionRepository } from '../../repositories/action.repository';
 import { OwnerRepository } from '../../repositories/owner.repository';
 import { TruckRepository } from '../../repositories/truck.repository';
@@ -98,6 +99,7 @@ export class TrucksService {
         ...dto,
         companyId: new Types.ObjectId(dto.companyId),
         ownerId: new Types.ObjectId(dto.ownerId),
+        certificate: this.toCertificateDates(dto.certificate),
       });
     } catch (error) {
       if ((error as { code?: number }).code === 11000) {
@@ -158,6 +160,9 @@ export class TrucksService {
       const updated = await this.truckRepository.updateById(truckId, {
         ...dto,
         ownerId: dto.ownerId ? new Types.ObjectId(dto.ownerId) : undefined,
+        certificate: dto.certificate
+          ? this.toCertificateDates(dto.certificate)
+          : undefined,
       });
 
       if (!updated) {
@@ -272,5 +277,30 @@ export class TrucksService {
     });
 
     return true;
+  }
+
+  private toCertificateDates(certificate: CertificateDto): Certificate {
+    return {
+      fitnessCertificate: {
+        fromDate: new Date(certificate.fitnessCertificate.fromDate),
+        toDate: new Date(certificate.fitnessCertificate.toDate),
+      },
+      permitDate: {
+        fromDate: new Date(certificate.permitDate.fromDate),
+        toDate: new Date(certificate.permitDate.toDate),
+      },
+      insurance: {
+        fromDate: new Date(certificate.insurance.fromDate),
+        toDate: new Date(certificate.insurance.toDate),
+      },
+      pollutionCertificate: {
+        fromDate: new Date(certificate.pollutionCertificate.fromDate),
+        toDate: new Date(certificate.pollutionCertificate.toDate),
+      },
+      taxCertificate: {
+        fromDate: new Date(certificate.taxCertificate.fromDate),
+        toDate: new Date(certificate.taxCertificate.toDate),
+      },
+    };
   }
 }

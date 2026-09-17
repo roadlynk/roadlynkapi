@@ -1,5 +1,43 @@
-import { IsEnum, IsMongoId, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsEnum,
+  IsMongoId,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Manufacturer } from '../../schemas/fleet/truck.schema';
+
+export class CertificateValidityDto {
+  @IsDateString()
+  fromDate!: string;
+
+  @IsDateString()
+  toDate!: string;
+}
+
+export class CertificateDto {
+  @ValidateNested()
+  @Type(() => CertificateValidityDto)
+  fitnessCertificate!: CertificateValidityDto;
+
+  @ValidateNested()
+  @Type(() => CertificateValidityDto)
+  permitDate!: CertificateValidityDto;
+
+  @ValidateNested()
+  @Type(() => CertificateValidityDto)
+  insurance!: CertificateValidityDto;
+
+  @ValidateNested()
+  @Type(() => CertificateValidityDto)
+  pollutionCertificate!: CertificateValidityDto;
+
+  @ValidateNested()
+  @Type(() => CertificateValidityDto)
+  taxCertificate!: CertificateValidityDto;
+}
 
 export class CreateTruckDto {
   @IsString()
@@ -31,4 +69,8 @@ export class CreateTruckDto {
 
   @IsMongoId()
   ownerId!: string;
+
+  @ValidateNested()
+  @Type(() => CertificateDto)
+  certificate!: CertificateDto;
 }

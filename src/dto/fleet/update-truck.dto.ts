@@ -1,5 +1,14 @@
-import { IsEnum, IsMongoId, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Manufacturer } from '../../schemas/fleet/truck.schema';
+import { CertificateDto } from './create-truck.dto';
 
 export class UpdateTruckDto {
   @IsOptional()
@@ -37,4 +46,9 @@ export class UpdateTruckDto {
   @IsOptional()
   @IsNumber()
   manufacturingYear?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CertificateDto)
+  certificate?: CertificateDto;
 }

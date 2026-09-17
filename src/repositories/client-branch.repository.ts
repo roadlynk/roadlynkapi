@@ -21,6 +21,12 @@ export class ClientBranchRepository {
     return this.clientBranchModel.findById(id).exec();
   }
 
+  findByIds(ids: string[]) {
+    return this.clientBranchModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
+      .exec();
+  }
+
   findByClientAndActiveStatus(clientId: string, isActive: boolean) {
     return this.clientBranchModel
       .find({ clientId: new Types.ObjectId(clientId), isActive })

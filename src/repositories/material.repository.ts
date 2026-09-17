@@ -18,6 +18,12 @@ export class MaterialRepository {
     return this.materialModel.findById(id).exec();
   }
 
+  findByIds(ids: string[]) {
+    return this.materialModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
+      .exec();
+  }
+
   findAll(companyId: string, isActive: boolean) {
     return this.materialModel
       .find({ companyId: new Types.ObjectId(companyId), isActive })

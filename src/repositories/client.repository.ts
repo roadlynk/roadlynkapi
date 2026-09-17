@@ -18,6 +18,12 @@ export class ClientRepository {
     return this.clientModel.findById(id).exec();
   }
 
+  findByIds(ids: string[]) {
+    return this.clientModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
+      .exec();
+  }
+
   findAllByCompanyAndActiveStatus(companyId: string, isActive: boolean) {
     return this.clientModel
       .find({ companyId: new Types.ObjectId(companyId), isActive })

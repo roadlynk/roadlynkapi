@@ -1,7 +1,32 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { AddressType } from '../../../common/enums/address-type.enum';
+import {
+  AddressCoordinates,
+  AddressCoordinatesSchema,
+} from '../../common/address-coordinates.schema';
+import { AddressPincode, AddressSchema } from '../../common/address-pincode.schema';
 
 export type ClientBranchDocument = ClientBranch & Document;
+
+@Schema({ _id: false })
+export class ClientBranchAddress {
+  @Prop({
+    type: String,
+    enum: AddressType,
+    required: true,
+  })
+  type!: AddressType;
+
+  @Prop({ type: AddressSchema })
+  pincodeAddress?: AddressPincode;
+
+  @Prop({ type: AddressCoordinatesSchema })
+  coordinatesAddress?: AddressCoordinates;
+}
+
+export const ClientBranchAddressSchema =
+  SchemaFactory.createForClass(ClientBranchAddress);
 
 @Schema({
   timestamps: true,
@@ -20,6 +45,9 @@ export class ClientBranch {
     index: true,
   })
   clientId!: Types.ObjectId;
+
+  @Prop({ type: ClientBranchAddressSchema, required: true })
+  address!: ClientBranchAddress;
 
   @Prop({
     default: true,

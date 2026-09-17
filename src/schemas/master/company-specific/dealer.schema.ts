@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { AddressType } from '../../../common/enums/address-type.enum';
+import { DealerType } from '../../../common/enums/dealer-type.enum';
 import {
   AddressCoordinates,
   AddressCoordinatesSchema,
@@ -45,6 +46,13 @@ export class Dealer {
 
   @Prop({ type: DealerAddressSchema, required: true })
   address!: DealerAddress;
+
+  @Prop({
+    type: String,
+    enum: DealerType,
+    default: DealerType.EXT_DEALER,
+  })
+  dealerType!: DealerType;
 
   @Prop({ default: true })
   isActive!: boolean;

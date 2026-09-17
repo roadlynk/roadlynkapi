@@ -8,6 +8,8 @@ import { CalculateTransportRateDto } from '../../dto/master/calculate-transport-
 import { CreateTransportRateDto } from '../../dto/master/create-transport-rate.dto';
 import { GetTransportRatesQueryDto } from '../../dto/master/get-transport-rates-query.dto';
 import { TransportRateRepository } from '../../repositories/transport-rate.repository';
+import { TruckRepository } from '../../repositories/truck.repository';
+import { DeliveryChallanService } from '../trip/delivery-challan.service';
 import { Actor, RegistrationAuthorizationService } from '../auth/authorization.service';
 
 @Injectable()
@@ -15,6 +17,8 @@ export class TransportRateService {
   constructor(
     private readonly transportRateRepository: TransportRateRepository,
     private readonly authorizationService: RegistrationAuthorizationService,
+    private readonly deliveryChallanService: DeliveryChallanService,
+    private readonly truckRepository: TruckRepository,
   ) {}
 
   async create(actor: Actor, dto: CreateTransportRateDto) {
@@ -33,13 +37,16 @@ export class TransportRateService {
     );
 
     if (activeRates.length > 0) {
+      const deactivationEffectiveTo = new Date(dto.effectiveFrom);
+      deactivationEffectiveTo.setDate(deactivationEffectiveTo.getDate() - 1);
+
       await this.transportRateRepository.deactivateByIds(
         activeRates.map((rate) => rate._id),
-        new Date(),
+        deactivationEffectiveTo,
       );
     }
 
-    return this.transportRateRepository.create({
+    const createdRate = await this.transportRateRepository.create({
       ...dto,
       companyId: new Types.ObjectId(dto.companyId),
       consignorId: new Types.ObjectId(dto.consignorId),
@@ -51,6 +58,58 @@ export class TransportRateService {
       materialId: new Types.ObjectId(dto.materialId),
       isActive: true,
     });
+
+    const allDCRecordsToUpdate = await this.deliveryChallanService.getAllByCombination(
+      actor,
+      dto.companyId,
+      dto.consignorId,
+      dto.consignorBranchId,
+      dto.consigneeId,
+      dto.dealerId,
+      dto.materialId,
+      dto.effectiveFrom,
+    );
+
+    const trucks = await this.truckRepository.findByIds(
+      allDCRecordsToUpdate.map((dc) => dc.truckDetails.truckId.toString()),
+    );
+    const truckCapacityById = new Map(
+      trucks.map((truck) => [truck._id.toString(), truck.capacity]),
+    );
+
+    const updatedDcNumbers: string[] = [];
+
+    for (const dc of allDCRecordsToUpdate) {
+      const truckCapacity = truckCapacityById.get(
+        dc.truckDetails.truckId.toString(),
+      );
+
+      const result = await this.getTransportRateAndLocation(actor, {
+        companyId: dto.companyId,
+        consignorId: dto.consignorId,
+        consignorBranchId: dto.consignorBranchId,
+        consigneeId: dto.consigneeId,
+        dealerId: dto.dealerId,
+        materialId: dto.materialId,
+        loadCapacity: dc.material.loadingQuantity,
+        truckCapacity: truckCapacity as number,
+      });
+
+      const totalTransportRate =
+        result.finalTransportRate +
+        (dc.rate.transportIncentive ?? 0) -
+        (dc.rate.biddingAmount ?? 0);
+
+      await this.deliveryChallanService.updateRateDetails(
+        dc._id.toString(),
+        result.finalTransportRate,
+        totalTransportRate,
+      );
+
+      updatedDcNumbers.push(dc.dcNumber);
+    }
+
+    return { createdRate, updatedDcNumbers };
   }
 
   async getByFilters(actor: Actor, query: GetTransportRatesQueryDto) {

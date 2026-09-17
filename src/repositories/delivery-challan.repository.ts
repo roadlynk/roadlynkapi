@@ -27,6 +27,47 @@ export class DeliveryChallanRepository {
       .exec();
   }
 
+  updateRateDetails(id: string, transportRate: number, totalTransportRate: number) {
+    return this.deliveryChallanModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            'rate.transportRate': transportRate,
+            'rate.totalTransportRate': totalTransportRate,
+          },
+        },
+        { returnDocument: 'after' },
+      )
+      .exec();
+  }
+
+  findAllByCombination(
+    companyId: string,
+    consignorId: string,
+    consignorBranchId: string,
+    consigneeId: string,
+    dealerId: string,
+    materialId: string,
+    effectiveFrom: Date,
+  ) {
+    return this.deliveryChallanModel
+      .find({
+        companyId: new Types.ObjectId(companyId),
+        'consignment.consignorId': new Types.ObjectId(consignorId),
+        'consignment.consignorBranchId': new Types.ObjectId(consignorBranchId),
+        'consignment.consigneeId': new Types.ObjectId(consigneeId),
+        'dealerDetails.shipToDealerId': new Types.ObjectId(dealerId),
+        'material.materialId': new Types.ObjectId(materialId),
+        dcDate: { $gte: effectiveFrom },
+      })
+      .exec();
+  }
+
+  findByFilters(filters: Record<string, unknown>) {
+    return this.deliveryChallanModel.find(filters).sort({ createdAt: -1 }).exec();
+  }
+
   async findAllPaginatedByCompany(
     companyId: string,
     isActive: boolean,

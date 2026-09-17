@@ -21,6 +21,12 @@ export class DealerRepository {
     return this.dealerModel.findById(id).exec();
   }
 
+  findByIds(ids: string[]) {
+    return this.dealerModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) } })
+      .exec();
+  }
+
   findByClientId(clientId: string, isActive: boolean) {
     return this.dealerModel
       .find({ clientId: new Types.ObjectId(clientId), isActive })

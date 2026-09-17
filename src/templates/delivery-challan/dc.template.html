@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Delivery Challan 2120 — MS ROADLINES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     RoadLynk-themed Delivery Challan — standalone HTML/CSS
+     Theme values are baked in as fixed hex colors.
+     ============================================================ */
+  :root {
+    --ink: #26282c;            /* surface-ink  (dark header bar) */
+    --foreground: #2b2d31;
+    --card: #ffffff;
+    --surface-muted: #f4f4f6;
+    --muted-foreground: #7e818a;
+    --accent: #e63946;         /* RoadLynk red */
+    --accent-foreground: #ffffff;
+    --border: #e2e3e6;
+    --on-ink: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 32px 16px;
+    background: #f4f4f6;
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- A4 sheet ---------- */
+  .dc-print-sheet {
+    width: min(100%, 210mm);
+    min-height: 297mm;
+    margin-inline: auto;
+    padding: 11mm;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px rgba(38, 40, 44, 0.06), 0 8px 24px rgba(38, 40, 44, 0.08);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  /* ---------- Header ---------- */
+  .dc-print-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 92px;
+    border-bottom: 3px solid var(--accent);
+    background: var(--ink);
+    color: var(--on-ink);
+    padding: 15px 18px;
+  }
+
+  .dc-print-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .dc-print-heading h2 {
+    margin: 1px 0 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .dc-print-heading p { margin: 0; }
+
+  .dc-print-kicker {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .dc-print-company {
+    max-width: 250px;
+    text-align: right;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+
+  .dc-print-company strong {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 13px;
+  }
+
+  /* ---------- Reference strip (Delivery no / date / truck / From) ---------- */
+  .dc-print-reference {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border);
+    border-top: 0;
+    background: var(--surface-muted);
+  }
+
+  .dc-print-reference > div {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .dc-print-reference > div + div {
+    border-left: 1px solid var(--border);
+  }
+
+  .dc-print-reference span {
+    display: block;
+    color: var(--muted-foreground);
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dc-print-reference strong {
+    display: block;
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+    font-size: 10px;
+  }
+
+  /* ---------- Content sections ---------- */
+  .dc-print-content-section {
+    margin-top: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .dc-print-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface-muted);
+  }
+
+  .dc-print-section-heading .dc-print-icon {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 4px;
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  .dc-print-section-heading .dc-print-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .dc-print-section-heading h3 {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .dc-print-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dc-print-grid > dl {
+    margin: 0;
+    padding: 10px 12px;
+  }
+
+  .dc-print-grid > dl + dl {
+    border-left: 1px solid var(--border);
+  }
+
+  .dc-print-grid--financial {
+    border-top: 1px solid var(--border);
+  }
+
+  .dc-print-row {
+    display: grid;
+    grid-template-columns: 7.75rem minmax(0, 1fr);
+    gap: 8px;
+    min-height: 29px;
+    align-items: start;
+  }
+
+  .dc-print-row dt {
+    color: var(--muted-foreground);
+    font-weight: 700;
+  }
+
+  .dc-print-row dt::after {
+    content: " :";
+    float: right;
+  }
+
+  .dc-print-row dd {
+    margin: 0;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---------- Footer: driver + signature ---------- */
+  .dc-print-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 120px;
+    margin-top: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .dc-print-footer p {
+    margin: 0 0 4px;
+    font-size: 11px;
+  }
+
+  .dc-print-signature > p {
+    font-weight: 700;
+  }
+
+  .dc-print-driver {
+    border-right: 1px solid var(--border);
+  }
+
+  .dc-print-driver > p {
+    padding-inline: 12px;
+  }
+
+  .dc-print-signature {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 12px;
+    text-align: right;
+  }
+
+  .dc-print-signature span,
+  .dc-print-note {
+    color: var(--muted-foreground);
+    font-size: 9px;
+  }
+
+  .dc-print-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding-top: 12px;
+    text-align: center;
+  }
+
+  .dc-print-note svg {
+    width: 11px;
+    height: 11px;
+    color: var(--accent);
+  }
+
+  .dc-print-note p { margin: 0; }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 640px) {
+    body { padding: 16px 8px; }
+    .dc-print-sheet { min-width: 680px; }
+  }
+
+  /* ---------- Print ---------- */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    body {
+      padding: 0;
+      background: #ffffff;
+    }
+
+    .dc-print-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0;
+      border: 0;
+      box-shadow: none;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+  <article class="dc-print-sheet" aria-label="Static delivery challan">
+    <header class="dc-print-heading">
+      <div class="dc-print-brand">
+        <div>
+          <p class="dc-print-kicker">Plan · Track · Deliver</p>
+          <h2>Delivery Challan</h2>
+        </div>
+      </div>
+      <div class="dc-print-company">
+        <strong>{{consignorName}}</strong>
+        <p>{{consignorBranchAddress}}</p>
+      </div>
+    </header>
+
+    <section class="dc-print-reference">
+      <div><span>Delivery number</span><strong>{{dcNumber}}</strong></div>
+      <div><span>Issue date</span><strong>{{dcDateAndTime}}</strong></div>
+      <div><span>Truck number</span><strong>{{truckNumber}}</strong></div>
+      <div><span>From</span><strong>{{consignorBranchName}}</strong></div>
+    </section>
+
+    <section class="dc-print-content-section">
+      <div class="dc-print-section-heading">
+        <span class="dc-print-icon">
+          <!-- MapPin -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <h3>Consignment details</h3>
+      </div>
+      <div class="dc-print-grid dc-print-grid--primary">
+        <dl>
+          <div class="dc-print-row"><dt>Delivery No</dt><dd>{{dcNumber}}</dd></div>
+          <div class="dc-print-row"><dt>Date</dt><dd>{{dcDateAndTime}}</dd></div>
+          <div class="dc-print-row"><dt>Consignor</dt><dd>{{consignorName}}</dd></div>
+          <div class="dc-print-row"><dt>From</dt><dd>{{consignorBranchName}}</dd></div>
+          <div class="dc-print-row"><dt>Truck No</dt><dd>{{truckNumber}}</dd></div>
+          <div class="dc-print-row"><dt>Qty</dt><dd>{{loadingQuantity}}</dd></div>
+        </dl>
+        <dl>
+          <div class="dc-print-row"><dt>Consignee</dt><dd>{{consigneeName}}</dd></div>
+          <div class="dc-print-row"><dt>Ship To</dt><dd>{{shipToAddress}}</dd></div>
+          <div class="dc-print-row"><dt>Company Kms</dt><dd>{{companyKms}}</dd></div>
+          <div class="dc-print-row"><dt>Invoice No</dt><dd>{{companyInvoiceNo}}</dd></div>
+          <div class="dc-print-row"><dt>Shipment No</dt><dd>{{companyShipmentNo}}</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="dc-print-content-section">
+      <div class="dc-print-section-heading">
+        <span class="dc-print-icon">
+          <!-- FileCheck2 -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>
+        </span>
+        <h3>Rate &amp; advance summary</h3>
+      </div>
+      <div class="dc-print-grid dc-print-grid--financial">
+        <dl>
+          <div class="dc-print-row"><dt>Transport Rate/MT</dt><dd>{{transportRate}}</dd></div>
+          <div class="dc-print-row"><dt>Cash Advance</dt><dd>{{cashAdvance}}</dd></div>
+          <div class="dc-print-row"><dt>Diesel Advance</dt><dd>{{dieselAdvance}}</dd></div>
+        </dl>
+        <dl>
+          <div class="dc-print-row"><dt>Odometer Reading</dt><dd>{{odometerKilometers}}</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="dc-print-footer">
+      <div class="dc-print-driver">
+        <div class="dc-print-section-heading">
+          <span class="dc-print-icon">
+            <!-- Truck -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </span>
+          <h3>Driver details</h3>
+        </div>
+        <p>{{driverName}}</p>
+        <p>{{driverContact}}</p>
+      </div>
+      <div class="dc-print-signature">
+        <p>For {{consignorName}}</p>
+        <span>Authorised Signature</span>
+      </div>
+    </section>
+
+    <footer class="dc-print-note">
+      <!-- ShieldCheck -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+      <p>This is a computer-generated delivery challan and does not require a physical stamp.</p>
+    </footer>
+  </article>
+</body>
+</html>

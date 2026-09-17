@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { errorCode } from '../../common/error.index';
+import { DealerType } from '../../common/enums/dealer-type.enum';
 import { ChangeDealerActiveStatusDto } from '../../dto/master/change-dealer-active-status.dto';
 import { CreateDealerDto } from '../../dto/master/create-dealer.dto';
 import { GetDealersByClientQueryDto } from '../../dto/master/get-dealers-by-client-query.dto';
@@ -55,6 +56,7 @@ export class DealerService {
       return await this.dealerRepository.create({
         ...dto,
         clientId: new Types.ObjectId(dto.clientId),
+        dealerType: DealerType.EXT_DEALER,
       });
     } catch (error) {
       if ((error as { code?: number }).code === 11000) {
