@@ -54,7 +54,21 @@ export class BankDetailsRepository {
 
   activateById(id: string) {
     return this.bankDetailsModel
-      .findByIdAndUpdate(id, { $set: { isActive: true } }, { returnDocument: 'after' })
+      .findByIdAndUpdate(
+        id,
+        { $set: { isActive: true } },
+        { returnDocument: 'after' },
+      )
+      .exec();
+  }
+
+  deactivateById(id: string) {
+    return this.bankDetailsModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { isActive: false } },
+        { returnDocument: 'after' },
+      )
       .exec();
   }
 }

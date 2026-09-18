@@ -1,4 +1,4 @@
-import { IsEnum, IsMongoId } from 'class-validator';
+import { IsBoolean, IsEnum, IsMongoId, IsOptional } from 'class-validator';
 import { HolderType } from '../../common/enums/bank-details.enum';
 
 export class SetActiveBankDetailsDto {
@@ -13,4 +13,8 @@ export class SetActiveBankDetailsDto {
 
   @IsMongoId()
   bankDetailsId!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isRental?: boolean;
 }

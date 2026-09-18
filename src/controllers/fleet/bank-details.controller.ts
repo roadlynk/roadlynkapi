@@ -33,4 +33,9 @@ export class BankDetailsController {
   setActive(@Req() req: any, @Body() dto: SetActiveBankDetailsDto) {
     return this.bankDetailsService.setActiveBankDetails(req.user, dto);
   }
+
+  @Patch('deactivate')
+  deactivate(@Req() req: any, @Body() dto: SetActiveBankDetailsDto) {
+    return this.bankDetailsService.deactivateBankDetails(req.user, dto);
+  }
 }
