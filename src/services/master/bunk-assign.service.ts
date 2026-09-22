@@ -24,7 +24,7 @@ export class BunkAssignService {
       dto.companyId,
     );
 
-    const bunkIdValue = dto.bunk?._id ?? dto.bunk?.id ?? dto.bunkId;
+    const bunkIdValue = dto.bunkId;
 
     if (!bunkIdValue) {
       throw new Error('Bunk is required');

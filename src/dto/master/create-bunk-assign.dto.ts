@@ -12,6 +12,4 @@ export class CreateBunkAssignDto {
 
   @IsMongoId()
   bunkId?: string;
-
-  bunk?: any;
 }
