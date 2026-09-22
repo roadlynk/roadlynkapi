@@ -27,6 +27,10 @@ export class BunkRepository {
       .exec();
   }
 
+  findByName(name: string) {
+    return this.bunkModel.findOne({ name: name.trim() }).exec();
+  }
+
   findById(id: string) {
     return this.bunkModel.findById(id).exec();
   }

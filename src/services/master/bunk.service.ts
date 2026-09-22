@@ -28,10 +28,8 @@ export class BunkService {
       dto.companyId,
     );
 
-    const existing = await this.bunkRepository.findByCompanyAndName(
-      dto.companyId,
-      dto.name,
-    );
+    const name = dto.name.trim();
+    const existing = await this.bunkRepository.findByName(name);
 
     if (existing) {
       return existing;
@@ -39,7 +37,7 @@ export class BunkService {
 
     return this.bunkRepository.create({
       companyId: new Types.ObjectId(dto.companyId),
-      name: dto.name.trim(),
+      name,
     });
   }
 }
