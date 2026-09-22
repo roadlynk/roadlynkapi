@@ -4,10 +4,13 @@ import { Types } from 'mongoose';
 import { join } from 'path';
 import { errorCode } from '../../common/error.index';
 import { AddressType } from '../../common/enums/address-type.enum';
+import { HolderType } from '../../common/enums/bank-details.enum';
+import { PaymentResourceType } from '../../common/enums/pending-payment.enum';
 import { CreateDeliveryChallanDto } from '../../dto/trip/create-delivery-challan.dto';
 import { FilterDeliveryChallansDto } from '../../dto/trip/filter-delivery-challans.dto';
 import { GetDeliveryChallansQueryDto } from '../../dto/trip/get-delivery-challans-query.dto';
 import { UpdateDeliveryChallanDto } from '../../dto/trip/update-delivery-challan.dto';
+import { BankDetailsRepository } from '../../repositories/bank-details.repository';
 import { ClientRepository } from '../../repositories/client.repository';
 import { ClientBranchRepository } from '../../repositories/client-branch.repository';
 import { CompanyRepository } from '../../repositories/company.repository';
@@ -15,18 +18,31 @@ import { DealerRepository } from '../../repositories/dealer.repository';
 import { DeliveryChallanRepository } from '../../repositories/delivery-challan.repository';
 import { DriverRepository } from '../../repositories/driver.repository';
 import { MaterialRepository } from '../../repositories/material.repository';
+import { OwnerRepository } from '../../repositories/owner.repository';
 import { TruckRepository } from '../../repositories/truck.repository';
 import {
   ClientBranchDocument,
 } from '../../schemas/master/company-specific/client-branch.schema';
 import { DealerDocument } from '../../schemas/master/company-specific/dealer.schema';
+import { DeliveryChallanDocument } from '../../schemas/trip/delivery-challan.schema';
 import { PdfService } from '../common/pdf.service';
+import { CashPaymentService } from '../payment/cash-payment.service';
+import { PendingPaymentService } from '../payment/pending-payment.service';
 import { Actor, RegistrationAuthorizationService } from '../auth/authorization.service';
+import { Bunk } from '../../schemas/master/company-specific/bunk.schema';
 
 const DC_PDF_TEMPLATE_PATH = join(
   __dirname,
   '../../templates/delivery-challan/dc.template.html',
 );
+
+// treats a date-only "to" filter as inclusive of the entire day
+function endOfDay(dateString: string): Date {
+  const date = new Date(dateString);
+  date.setUTCHours(23, 59, 59, 999);
+  return date;
+}
+
 
 @Injectable()
 export class DeliveryChallanService {
@@ -37,10 +53,14 @@ export class DeliveryChallanService {
     private readonly clientBranchRepository: ClientBranchRepository,
     private readonly truckRepository: TruckRepository,
     private readonly driverRepository: DriverRepository,
+    private readonly ownerRepository: OwnerRepository,
     private readonly dealerRepository: DealerRepository,
     private readonly materialRepository: MaterialRepository,
+    private readonly bankDetailsRepository: BankDetailsRepository,
     private readonly authorizationService: RegistrationAuthorizationService,
     private readonly pdfService: PdfService,
+    private readonly pendingPaymentService: PendingPaymentService,
+    private readonly cashPaymentService: CashPaymentService,
   ) {}
 
   async getAll(actor: Actor, query: GetDeliveryChallansQueryDto) {
@@ -257,7 +277,7 @@ export class DeliveryChallanService {
       if (fromDate || toDate) {
         filters['companyDetails.date'] = {
           ...(fromDate ? { $gte: new Date(fromDate) } : {}),
-          ...(toDate ? { $lte: new Date(toDate) } : {}),
+          ...(toDate ? { $lte: endOfDay(toDate) } : {}),
         };
       }
     }
@@ -265,7 +285,7 @@ export class DeliveryChallanService {
     if (dto.dcDateFrom || dto.dcDateTo) {
       filters.dcDate = {
         ...(dto.dcDateFrom ? { $gte: new Date(dto.dcDateFrom) } : {}),
-        ...(dto.dcDateTo ? { $lte: new Date(dto.dcDateTo) } : {}),
+        ...(dto.dcDateTo ? { $lte: endOfDay(dto.dcDateTo) } : {}),
       };
     }
 
@@ -280,11 +300,15 @@ export class DeliveryChallanService {
     deliveryChallanId: string,
     transportRate: number,
     totalTransportRate: number,
+    calculatedDistance?: number,
+    companyDistance?: number,
   ) {
     return this.deliveryChallanRepository.updateRateDetails(
       deliveryChallanId,
       transportRate,
       totalTransportRate,
+      calculatedDistance,
+      companyDistance,
     );
   }
 
@@ -338,6 +362,12 @@ export class DeliveryChallanService {
         consignorBranchId: new Types.ObjectId(dto.consignment.consignorBranchId),
         consigneeId: new Types.ObjectId(dto.consignment.consigneeId),
         consigneeBranchId: new Types.ObjectId(dto.consignment.consigneeBranchId),
+        bunkId: dto.consignment.bunkId
+          ? new Types.ObjectId(dto.consignment.bunkId)
+          : undefined,
+        account: dto.consignment.account
+          ? new Types.ObjectId(dto.consignment.account)
+          : undefined,
       },
       truckDetails: {
         truckId: new Types.ObjectId(dto.truckDetails.truckId),
@@ -357,9 +387,9 @@ export class DeliveryChallanService {
     // Atomic $inc guarantees each concurrent request gets a unique sequence.
     const sequence = await this.companyRepository.incrementDcSequence(dto.companyId);
     const dcNumber = `${company.companyCode}-DC-${String(sequence).padStart(5, '0')}`;
-
+    let createdDeliveryChallan;
     try {
-      return await this.deliveryChallanRepository.create({
+      createdDeliveryChallan = await this.deliveryChallanRepository.create({
         ...payload,
         sequence,
         dcNumber,
@@ -374,6 +404,104 @@ export class DeliveryChallanService {
 
       throw error;
     }
+
+    await this.createBankAdvancePendingPayment(createdDeliveryChallan);
+    await this.createCashAdvanceCashPayment(createdDeliveryChallan);
+
+    return createdDeliveryChallan;
+  }
+
+  private async createBankAdvancePendingPayment(
+    deliveryChallan: DeliveryChallanDocument,
+  ) {
+    if (!deliveryChallan.advance.bankAdvance) {
+      return;
+    }
+
+    const truck = await this.truckRepository.findById(
+      deliveryChallan.truckDetails.truckId.toString(),
+    );
+
+    if (!truck) {
+      throw new NotFoundException({
+        message: 'Truck not found',
+        error_code: errorCode.apiCommon.notFound,
+      });
+    }
+
+    const owner = await this.ownerRepository.findById(truck.ownerId.toString());
+
+    if (!owner) {
+      throw new NotFoundException({
+        message: 'Owner not found',
+        error_code: errorCode.apiCommon.notFound,
+      });
+    }
+
+    if (!owner.isRental) {
+      return;
+    }
+
+    const ownerId = owner._id.toString();
+    const ownerBankAccounts = await this.bankDetailsRepository.findByHolder(
+      ownerId,
+      HolderType.OWNER,
+    );
+    const activeBankAccount = ownerBankAccounts.find(
+      (bankAccount) => bankAccount.isActive,
+    );
+
+    if (!activeBankAccount) {
+      throw new NotFoundException({
+        message: 'Active bank details not found for the owner',
+        error_code: errorCode.apiCommon.notFound,
+      });
+    }
+
+    const amount = deliveryChallan.advance.bankAdvance ?? 0;
+
+    await this.pendingPaymentService.create({
+      date: (deliveryChallan.dcDate ?? new Date()).toISOString(),
+      resourceType: PaymentResourceType.DELIVERY_CHALLAN,
+      resourceId: deliveryChallan._id.toString(),
+      amount: amount,
+      receiverType: HolderType.OWNER,
+      receiverId: ownerId,
+      receiverBankId: activeBankAccount._id.toString(),
+    });
+  }
+
+  private async createCashAdvanceCashPayment(
+    deliveryChallan: DeliveryChallanDocument,
+  ) {
+    if (!deliveryChallan.advance.cashAdvance) {
+      return;
+    }
+
+    if (!deliveryChallan.consignment.account) {
+      return;
+    }
+
+    const truck = await this.truckRepository.findById(
+      deliveryChallan.truckDetails.truckId.toString(),
+    );
+
+    if (!truck) {
+      throw new NotFoundException({
+        message: 'Truck not found',
+        error_code: errorCode.apiCommon.notFound,
+      });
+    }
+
+    await this.cashPaymentService.create({
+      date: (deliveryChallan.dcDate ?? new Date()).toISOString(),
+      cashAccountId: deliveryChallan.consignment.account.toString(),
+      resourceType: PaymentResourceType.DELIVERY_CHALLAN,
+      resourceId: deliveryChallan._id.toString(),
+      amount: deliveryChallan.advance.cashAdvance ?? 0,
+      receiverType: HolderType.OWNER,
+      receiverId: truck.ownerId.toString(),
+    });
   }
 
   async update(
@@ -406,6 +534,12 @@ export class DeliveryChallanService {
         consignorBranchId: new Types.ObjectId(dto.consignment.consignorBranchId),
         consigneeId: new Types.ObjectId(dto.consignment.consigneeId),
         consigneeBranchId: new Types.ObjectId(dto.consignment.consigneeBranchId),
+        bunkId: dto.consignment.bunkId
+          ? new Types.ObjectId(dto.consignment.bunkId)
+          : undefined,
+        account: dto.consignment.account
+          ? new Types.ObjectId(dto.consignment.account)
+          : undefined,
       };
     }
     if (dto.truckDetails) {

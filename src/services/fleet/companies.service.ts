@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { errorCode } from '../../common/error.index';
 import { CreateCompanyDto } from '../../dto/fleet/create-company.dto';
 import { CompanyRepository } from '../../repositories/company.repository';
@@ -13,6 +14,11 @@ import { Actor, RegistrationAuthorizationService } from '../auth/authorization.s
 import { GetCompaniesQueryDto } from '../../dto/fleet/get-companies-query.dto';
 import { ChangeCompanyActiveStatusDto } from '../../dto/fleet/change-company-active-status.dto';
 import { UpdateCompanyDto } from '../../dto/fleet/update-company.dto';
+import { OwnerRepository } from '../../repositories/owner.repository';
+import {
+  AccountGroup,
+  OpeningBalanceType,
+} from '../../schemas/fleet/owner.schema';
 
 interface CompanyListActor {
   sub?: string;
@@ -24,6 +30,7 @@ interface CompanyListActor {
 export class CompaniesService {
   constructor(
     private readonly companyRepository: CompanyRepository,
+    private readonly ownerRepository: OwnerRepository,
     private readonly companyMembershipsService: CompanyMembershipsService,
     private readonly authorizationService: RegistrationAuthorizationService,
   ) {}
@@ -80,7 +87,25 @@ export class CompaniesService {
     }
 
     try {
-      return await this.companyRepository.create(dto);
+      const company = await this.companyRepository.create(dto);
+
+      await this.ownerRepository.create({
+        name: dto.companyName,
+        phoneNumber: dto.contactNumber,
+        email: dto.contactEmail,
+        aadharNumber: dto.companyCode,
+        address: dto.address,
+        companyId: new Types.ObjectId(company._id),
+        panNumber: dto.pan,
+        gstin: dto.gstin,
+        isRental: false,
+        accountGroup: AccountGroup.ASSET,
+        openingBalance: 0,
+        openingBalanceType: OpeningBalanceType.DEBIT,
+        isActive: company.isActive ?? true,
+      });
+
+      return company;
     } catch (error) {
       if ((error as { code?: number }).code === 11000) {
         throw new ConflictException({

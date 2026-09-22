@@ -43,6 +43,28 @@ export class ClientService {
     );
   }
 
+  async getById(actor: Actor, clientId: string) {
+    const client = await this.clientRepository.findById(clientId);
+
+    if (!client) {
+      throw new NotFoundException({
+        message: 'Client not found',
+        error_code: errorCode.apiCommon.notFound,
+      });
+    }
+
+    await this.authorizationService.isAuthorisedtoAccessCompany(
+      actor,
+      client.companyId.toString(),
+    );
+
+    const branches = await this.clientBranchRepository.findAllByClient(
+      clientId,
+    );
+
+    return { ...client.toObject(), branches };
+  }
+
   async create(actor: Actor, dto: CreateClientDto) {
     await this.authorizationService.isAuthorisedtoAccessCompany(
       actor,

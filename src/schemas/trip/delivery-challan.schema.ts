@@ -57,14 +57,17 @@ export class Consignment {
   consigneeBranchId!: Types.ObjectId;
 
   @Prop({
-    trim: true,
+    type: Types.ObjectId,
+    ref: 'Bunk',
+    required: true,
   })
-  bunkName?: string;
+  bunkId!: Types.ObjectId;
 
   @Prop({
-    trim: true,
+    type: Types.ObjectId,
+    ref: 'CashAccount',
   })
-  account?: string;
+  account?: Types.ObjectId;
 }
 
 export const ConsignmentSchema = SchemaFactory.createForClass(Consignment);
@@ -215,7 +218,12 @@ export class AdvanceDetails {
   @Prop({
     default: false,
   })
-  isPaymentDone?: boolean;
+  bankPaymentDone?: boolean;
+
+  @Prop({
+    default: false,
+  })
+  bunkCreditUsed?: boolean;
 
   @Prop({
     type: Number,

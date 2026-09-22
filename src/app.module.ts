@@ -14,11 +14,14 @@ import { ClientModule } from './modules/master/client.module';
 import { ClientBranchModule } from './modules/master/client-branch.module';
 import { DealerModule } from './modules/master/dealer.module';
 import { TransportRateModule } from './modules/master/transport-rate.module';
-import { BunkModule } from './modules/master/bunk.module';
+import { BunkAssignModule } from './modules/master/bunk-assign.module';
+import { AccountAssignModule } from './modules/master/account-assign.module';
 import { ActionsModule } from './modules/fleet/actions.module';
 import { PincodeModule } from './modules/master/pincode.module';
 import { DeliveryChallanModule } from './modules/trip/delivery-challan.module';
 import { ImagesModule } from './modules/common/images.module';
+import { CashAccountModule } from './modules/payment/cash-account.module';
+import { CashPaymentModule } from './modules/payment/cash-payment.module';
 
 @Module({
   imports: [
@@ -46,11 +49,14 @@ import { ImagesModule } from './modules/common/images.module';
     ClientBranchModule,
     DealerModule,
     TransportRateModule,
-    BunkModule,
+    BunkAssignModule,
+    AccountAssignModule,
     ActionsModule,
     PincodeModule,
     DeliveryChallanModule,
     ImagesModule,
+    CashAccountModule,
+    CashPaymentModule,
   ],
 })
 export class AppModule {}

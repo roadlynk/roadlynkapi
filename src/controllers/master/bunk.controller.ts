@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,13 +17,13 @@ import { BunkService } from '../../services/master/bunk.service';
 export class BunkController {
   constructor(private readonly bunkService: BunkService) {}
 
+  @Get()
+  getAll(@Req() req: any, @Query() query: GetBunksQueryDto) {
+    return this.bunkService.getAll(req.user, query);
+  }
+
   @Post()
   create(@Req() req: any, @Body() dto: CreateBunkDto) {
     return this.bunkService.create(req.user, dto);
-  }
-
-  @Post('filter')
-  getByFilters(@Req() req: any, @Body() dto: GetBunksQueryDto) {
-    return this.bunkService.getByFilters(req.user, dto);
   }
 }

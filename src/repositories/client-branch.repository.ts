@@ -34,6 +34,13 @@ export class ClientBranchRepository {
       .exec();
   }
 
+  findAllByClient(clientId: string) {
+    return this.clientBranchModel
+      .find({ clientId: new Types.ObjectId(clientId) })
+      .sort({ branchName: 1 })
+      .exec();
+  }
+
   findByUniqueIdentifier(clientId: string, branchName: string) {
     return this.clientBranchModel
       .findOne({ clientId: new Types.ObjectId(clientId), branchName })

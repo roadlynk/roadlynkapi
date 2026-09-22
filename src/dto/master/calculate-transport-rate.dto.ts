@@ -1,4 +1,10 @@
-import { IsMongoId, IsNumber, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class CalculateTransportRateDto {
   @IsMongoId()
@@ -18,6 +24,10 @@ export class CalculateTransportRateDto {
 
   @IsMongoId()
   materialId!: string;
+
+  @IsOptional()
+  @IsDateString()
+  companyDate?: string;
 
   @IsNumber()
   @Min(0)

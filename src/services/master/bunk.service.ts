@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { errorCode } from '../../common/error.index';
 import { CreateBunkDto } from '../../dto/master/create-bunk.dto';
 import { GetBunksQueryDto } from '../../dto/master/get-bunks-query.dto';
 import { BunkRepository } from '../../repositories/bunk.repository';
@@ -12,51 +13,33 @@ export class BunkService {
     private readonly authorizationService: RegistrationAuthorizationService,
   ) {}
 
+  async getAll(actor: Actor, query: GetBunksQueryDto) {
+    await this.authorizationService.isAuthorisedtoAccessCompany(
+      actor,
+      query.companyId,
+    );
+
+    return this.bunkRepository.findAll(query.companyId);
+  }
+
   async create(actor: Actor, dto: CreateBunkDto) {
     await this.authorizationService.isAuthorisedtoAccessCompany(
       actor,
       dto.companyId,
     );
 
-    const existing = await this.bunkRepository.findByCombination(
+    const existing = await this.bunkRepository.findByCompanyAndName(
       dto.companyId,
-      dto.consignorId,
-      dto.consignorBranchId,
+      dto.name,
     );
 
     if (existing) {
-      return this.bunkRepository.updateById(existing._id.toString(), {
-        bunkName: dto.bunkName,
-      });
+      return existing;
     }
 
     return this.bunkRepository.create({
-      ...dto,
       companyId: new Types.ObjectId(dto.companyId),
-      consignorId: new Types.ObjectId(dto.consignorId),
-      consignorBranchId: new Types.ObjectId(dto.consignorBranchId),
+      name: dto.name.trim(),
     });
-  }
-
-  async getByFilters(actor: Actor, query: GetBunksQueryDto) {
-    await this.authorizationService.isAuthorisedtoAccessCompany(
-      actor,
-      query.companyId,
-    );
-
-    const filters: Record<string, Types.ObjectId> = {
-      companyId: new Types.ObjectId(query.companyId),
-    };
-
-    for (const field of [
-      'consignorId',
-      'consignorBranchId',
-    ] as const) {
-      if (query[field]) {
-        filters[field] = new Types.ObjectId(query[field]);
-      }
-    }
-
-    return this.bunkRepository.findByFilters(filters);
   }
 }

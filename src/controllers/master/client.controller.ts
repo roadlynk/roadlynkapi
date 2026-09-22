@@ -26,6 +26,11 @@ export class ClientController {
     return this.clientService.getAll(req.user, query);
   }
 
+  @Get(':clientId')
+  getById(@Req() req: any, @Param('clientId') clientId: string) {
+    return this.clientService.getById(req.user, clientId);
+  }
+
   @Post()
   create(@Req() req: any, @Body() dto: CreateClientDto) {
     return this.clientService.create(req.user, dto);

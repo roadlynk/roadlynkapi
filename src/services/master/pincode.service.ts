@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { errorCode } from '../../common/error.index';
 
@@ -26,7 +26,21 @@ export class PincodeService implements OnModuleInit {
   }
 
   private buildIndex() {
-    const filePath = join(__dirname, '../../data/pincode.json');
+    const candidatePaths = [
+      join(process.cwd(), 'src', 'data', 'pincode.json'),
+      join(process.cwd(), 'data', 'pincode.json'),
+      join(__dirname, '../../../src/data/pincode.json'),
+      join(__dirname, '../../data/pincode.json'),
+    ];
+
+    const filePath = candidatePaths.find((path) => existsSync(path));
+
+    if (!filePath) {
+      throw new Error(
+        `Pincode data file not found. Tried: ${candidatePaths.join(', ')}`,
+      );
+    }
+
     const raw = readFileSync(filePath, 'utf-8');
     const { records } = JSON.parse(raw) as { records: RawPincodeRecord[] };
 

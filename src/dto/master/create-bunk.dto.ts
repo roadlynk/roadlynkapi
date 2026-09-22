@@ -1,16 +1,10 @@
-import { IsArray, IsMongoId, IsString } from 'class-validator';
+import { IsMongoId, IsString, Matches } from 'class-validator';
 
 export class CreateBunkDto {
   @IsMongoId()
   companyId!: string;
 
-  @IsMongoId()
-  consignorId!: string;
-
-  @IsMongoId()
-  consignorBranchId!: string;
-
-  @IsArray()
-  @IsString({ each: true })
-  bunkName!: string[];
+  @IsString()
+  @Matches(/^\s*\S.*$/, { message: 'Bunk name is required' })
+  name!: string;
 }

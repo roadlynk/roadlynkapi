@@ -41,7 +41,15 @@ export class TransportRateRepository {
     consigneeId: string,
     dealerId: string,
     materialId: string,
+    companyDate?: Date | string,
   ) {
+    const selectedDate = companyDate ? new Date(companyDate) : new Date();
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     return this.transportRateModel
       .findOne({
         companyId: new Types.ObjectId(companyId),
@@ -50,8 +58,13 @@ export class TransportRateRepository {
         consigneeId: new Types.ObjectId(consigneeId),
         dealerId: new Types.ObjectId(dealerId),
         materialId: new Types.ObjectId(materialId),
-        isActive: true,
+        effectiveFrom: { $lte: endOfDay },
+        $or: [
+          { effectiveTo: null },
+          { effectiveTo: { $gte: startOfDay } },
+        ],
       })
+      .sort({ createdAt: -1, _id: -1 })
       .exec();
   }
 

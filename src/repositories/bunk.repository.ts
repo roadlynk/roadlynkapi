@@ -10,31 +10,28 @@ export class BunkRepository {
     private readonly bunkModel: Model<BunkDocument>,
   ) {}
 
-  findByCombination(
-    companyId: string,
-    consignorId: string,
-    consignorBranchId: string,
-  ) {
+  findAll(companyId?: string) {
+    const filter = companyId
+      ? { companyId: new Types.ObjectId(companyId) }
+      : {};
+
+    return this.bunkModel.find(filter).sort({ name: 1 }).exec();
+  }
+
+  findByCompanyAndName(companyId: string, name: string) {
     return this.bunkModel
       .findOne({
         companyId: new Types.ObjectId(companyId),
-        consignorId: new Types.ObjectId(consignorId),
-        consignorBranchId: new Types.ObjectId(consignorBranchId),
+        name: name.trim(),
       })
       .exec();
   }
 
-  create(bunk: Partial<Bunk>) {
-    return this.bunkModel.create(bunk);
+  findById(id: string) {
+    return this.bunkModel.findById(id).exec();
   }
 
-  updateById(id: string, update: Partial<Bunk>) {
-    return this.bunkModel
-      .findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' })
-      .exec();
-  }
-
-  findByFilters(filters: Record<string, Types.ObjectId>) {
-    return this.bunkModel.find(filters).sort({ createdAt: -1 }).exec();
+  create(data: Partial<Bunk>) {
+    return this.bunkModel.create(data);
   }
 }

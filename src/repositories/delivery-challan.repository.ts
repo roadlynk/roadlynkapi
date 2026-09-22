@@ -27,7 +27,13 @@ export class DeliveryChallanRepository {
       .exec();
   }
 
-  updateRateDetails(id: string, transportRate: number, totalTransportRate: number) {
+  updateRateDetails(
+    id: string,
+    transportRate: number,
+    totalTransportRate: number,
+    calculatedDistance?: number,
+    companyDistance?: number,
+  ) {
     return this.deliveryChallanModel
       .findByIdAndUpdate(
         id,
@@ -35,6 +41,12 @@ export class DeliveryChallanRepository {
           $set: {
             'rate.transportRate': transportRate,
             'rate.totalTransportRate': totalTransportRate,
+            ...(calculatedDistance !== undefined
+              ? { 'distance.calculatedDistance': calculatedDistance }
+              : {}),
+            ...(companyDistance !== undefined
+              ? { 'distance.companyDistance': companyDistance }
+              : {}),
           },
         },
         { returnDocument: 'after' },
@@ -59,7 +71,7 @@ export class DeliveryChallanRepository {
         'consignment.consigneeId': new Types.ObjectId(consigneeId),
         'dealerDetails.shipToDealerId': new Types.ObjectId(dealerId),
         'material.materialId': new Types.ObjectId(materialId),
-        dcDate: { $gte: effectiveFrom },
+        'companyDetails.date': { $gte: effectiveFrom },
       })
       .exec();
   }

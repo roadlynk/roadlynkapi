@@ -36,11 +36,11 @@ export class ConsignmentDto {
   consigneeBranchId!: string;
 
   @IsOptional()
-  @IsString()
-  bunkName?: string;
+  @IsMongoId()
+  bunkId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   account?: string;
 }
 
@@ -131,7 +131,11 @@ export class AdvanceDetailsDto {
 
   @IsOptional()
   @IsBoolean()
-  isPaymentDone?: boolean;
+  bankPaymentDone?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  bunkCreditUsed?: boolean;
 
   @IsOptional()
   @IsNumber()

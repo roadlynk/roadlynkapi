@@ -1,0 +1,4 @@
+export enum PaymentResourceType {
+  DELIVERY_CHALLAN = 'DELIVERY_CHALLAN',
+  GOODS_RECIPT_NOTES = 'GOODS_RECIPT_NOTES',
+}

@@ -16,34 +16,18 @@ export class Bunk {
   companyId!: Types.ObjectId;
 
   @Prop({
-    type: Types.ObjectId,
-    ref: 'Client',
+    type: String,
     required: true,
-    index: true,
+    trim: true,
   })
-  consignorId!: Types.ObjectId;
-
-  @Prop({
-    type: Types.ObjectId,
-    ref: 'ClientBranch',
-    required: true,
-    index: true,
-  })
-  consignorBranchId!: Types.ObjectId;
-
-  @Prop({
-    type: [String],
-    required: true,
-  })
-  bunkName!: string[];
+  name!: string;
 }
 
 export const BunkSchema = SchemaFactory.createForClass(Bunk);
 BunkSchema.index(
   {
     companyId: 1,
-    consignorId: 1,
-    consignorBranchId: 1,
+    name: 1,
   },
   { unique: true },
 );

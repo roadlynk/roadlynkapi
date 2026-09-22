@@ -34,6 +34,7 @@ export class TransportRateController {
     return this.transportRateService.getTransportRateAndLocation(
       req.user,
       dto,
+      dto.companyDate,
     );
   }
 }

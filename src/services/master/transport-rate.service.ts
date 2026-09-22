@@ -104,6 +104,8 @@ export class TransportRateService {
         dc._id.toString(),
         result.finalTransportRate,
         totalTransportRate,
+        result.calculatedDistance,
+        result.companyDistance,
       );
 
       updatedDcNumbers.push(dc.dcNumber);
@@ -144,11 +146,14 @@ export class TransportRateService {
   async getTransportRateAndLocation(
     actor: Actor,
     dto: CalculateTransportRateDto,
+    companyDate?: Date | string,
   ) {
     await this.authorizationService.isAuthorisedtoAccessCompany(
       actor,
       dto.companyId,
     );
+
+    const effectiveDate = companyDate ?? dto.companyDate ?? new Date();
 
     const transportRate =
       await this.transportRateRepository.findOneActiveByCombination(
@@ -158,6 +163,7 @@ export class TransportRateService {
         dto.consigneeId,
         dto.dealerId,
         dto.materialId,
+        effectiveDate,
       );
 
     if (!transportRate) {
@@ -166,7 +172,7 @@ export class TransportRateService {
 
     const tonnageRate = this.findTonnageRate(
       transportRate.tonnageRate,
-      dto.loadCapacity,
+      dto.truckCapacity,
     );
     let finalTransportRate;
     if((dto.loadCapacity - dto.truckCapacity) <= 0){
@@ -196,11 +202,11 @@ export class TransportRateService {
       toLimit: number;
       transportRate: number[];
     }>,
-    loadCapacity: number,
+    truckCapacity: number,
   ) {
     const matchedRates = tonnageRate.filter(
       (rate) =>
-        loadCapacity >= rate.fromLimit && loadCapacity <= rate.toLimit,
+        truckCapacity >= rate.fromLimit && truckCapacity <= rate.toLimit,
     );
 
     if (matchedRates.length === 0) {

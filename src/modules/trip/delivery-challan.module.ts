@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DeliveryChallanController } from '../../controllers/trip/delivery-challan.controller';
+import { BankDetailsRepository } from '../../repositories/bank-details.repository';
+import { CashPaymentRepository } from '../../repositories/cash-payment.repository';
 import { ClientRepository } from '../../repositories/client.repository';
 import { ClientBranchRepository } from '../../repositories/client-branch.repository';
 import { CompanyRepository } from '../../repositories/company.repository';
@@ -8,9 +10,16 @@ import { DealerRepository } from '../../repositories/dealer.repository';
 import { DeliveryChallanRepository } from '../../repositories/delivery-challan.repository';
 import { DriverRepository } from '../../repositories/driver.repository';
 import { MaterialRepository } from '../../repositories/material.repository';
+import { OwnerRepository } from '../../repositories/owner.repository';
+import { PendingPaymentRepository } from '../../repositories/pending-payment.repository';
 import { TruckRepository } from '../../repositories/truck.repository';
 import { Company, CompanySchema } from '../../schemas/fleet/company.schema';
 import { Driver, DriverSchema } from '../../schemas/fleet/driver.schema';
+import { Owner, OwnerSchema } from '../../schemas/fleet/owner.schema';
+import {
+  BankDetails,
+  BankDetailsSchema,
+} from '../../schemas/fleet/bank-details.schema';
 import { Truck, TruckSchema } from '../../schemas/fleet/truck.schema';
 import {
   Client,
@@ -32,8 +41,18 @@ import {
   DeliveryChallan,
   DeliveryChallanSchema,
 } from '../../schemas/trip/delivery-challan.schema';
+import {
+  PendingPayment,
+  PendingPaymentSchema,
+} from '../../schemas/payment/pending-payment.schema';
+import {
+  CashPayment,
+  CashPaymentSchema,
+} from '../../schemas/payment/cash-payment.schema';
 import { PdfService } from '../../services/common/pdf.service';
 import { DeliveryChallanService } from '../../services/trip/delivery-challan.service';
+import { PendingPaymentService } from '../../services/payment/pending-payment.service';
+import { CashPaymentService } from '../../services/payment/cash-payment.service';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../auth/users.module';
 
@@ -48,8 +67,12 @@ import { UsersModule } from '../auth/users.module';
       { name: ClientBranch.name, schema: ClientBranchSchema },
       { name: Truck.name, schema: TruckSchema },
       { name: Driver.name, schema: DriverSchema },
+      { name: Owner.name, schema: OwnerSchema },
       { name: Dealer.name, schema: DealerSchema },
       { name: Material.name, schema: MaterialSchema },
+      { name: BankDetails.name, schema: BankDetailsSchema },
+      { name: PendingPayment.name, schema: PendingPaymentSchema },
+      { name: CashPayment.name, schema: CashPaymentSchema },
     ]),
   ],
   controllers: [DeliveryChallanController],
@@ -60,9 +83,15 @@ import { UsersModule } from '../auth/users.module';
     ClientBranchRepository,
     TruckRepository,
     DriverRepository,
+    OwnerRepository,
     DealerRepository,
     MaterialRepository,
+    BankDetailsRepository,
+    PendingPaymentRepository,
+    CashPaymentRepository,
     DeliveryChallanService,
+    PendingPaymentService,
+    CashPaymentService,
     PdfService,
   ],
   exports: [DeliveryChallanRepository, DeliveryChallanService],
